@@ -35,13 +35,13 @@ public class ProductCategoryRepositoryTest {
         logger.info(productCategory.toString());
     }
 
-//    @Test
-//    @Transactional
-//    public void saveTest(){
-//        ProductCategory pc = new ProductCategory("热销榜",100000);
-//        ProductCategory back = repository.save(pc);
-//        Assert.assertNotNull(back);
-//    }
+    @Test
+    @Transactional
+    public void saveTest(){
+        ProductCategory pc = new ProductCategory("热销榜",100000);
+        ProductCategory back = repository.save(pc);
+        Assert.assertNotNull(back);
+    }
 
     @Test
     public void updateTest(){
