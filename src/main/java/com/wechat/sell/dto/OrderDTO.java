@@ -1,5 +1,6 @@
-package com.wechat.sell.domain;
+package com.wechat.sell.dto;
 
+import com.wechat.sell.domain.OrderDetail;
 import com.wechat.sell.enums.OrderStatusEnum;
 import com.wechat.sell.enums.PayStatusEnum;
 import lombok.Data;
@@ -7,27 +8,22 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.Transient;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
 /**
  * @Title: ${FILE_NAME}
- * @Package: com.wechat.sell.domain
+ * @Package: com.wechat.sell.dto
  * @Description:
- * @author: Minsky
- * @date: 2018/4/3 6:32
+ * @author: Eta
+ * @date: 2018/4/9 20:12
  */
-@Entity
 @Data
-@DynamicUpdate
-public class OrderManager {
-
+public class OrderDTO {
     /**
      * 订单ID
      */
-    @Id
     private String orderId;
 
     /**
@@ -58,17 +54,20 @@ public class OrderManager {
     /**
      * 订单状态
      */
-    private Integer orderStatus= OrderStatusEnum.NEW.getCode();
+    private Integer orderStatus;
 
     /**
      * 支付状态
      */
-    private Integer payStatus= PayStatusEnum.WAIT.getCode();
+    private Integer payStatus;
 
     /** 创建时间 */
     private Date createTime;
 
     /** 更新时间 */
     private Date updateTime;
+
+    /***/
+    private List<OrderDetail> orderDetailList;
 
 }

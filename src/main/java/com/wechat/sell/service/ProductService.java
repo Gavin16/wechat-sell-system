@@ -13,7 +13,7 @@ import java.util.List;
  * @author: Minsky
  * @date: 2018/3/27 22:12
  */
-public interface ProductInfoService {
+public interface ProductService {
 
     ProductInfo findOne(String productId);
 
