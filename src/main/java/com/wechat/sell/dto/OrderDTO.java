@@ -1,13 +1,8 @@
 package com.wechat.sell.dto;
 
 import com.wechat.sell.domain.OrderDetail;
-import com.wechat.sell.enums.OrderStatusEnum;
-import com.wechat.sell.enums.PayStatusEnum;
 import lombok.Data;
-import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;

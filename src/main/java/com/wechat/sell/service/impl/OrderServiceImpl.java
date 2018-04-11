@@ -1,11 +1,16 @@
 package com.wechat.sell.service.impl;
 
 import com.wechat.sell.domain.OrderDetail;
+import com.wechat.sell.domain.OrderManager;
 import com.wechat.sell.domain.ProductInfo;
+import com.wechat.sell.dto.CartDTO;
 import com.wechat.sell.dto.OrderDTO;
+import com.wechat.sell.enums.OrderStatusEnum;
+import com.wechat.sell.enums.PayStatusEnum;
 import com.wechat.sell.enums.ResultEnum;
 import com.wechat.sell.exception.SellException;
 import com.wechat.sell.repository.OrderDetailRepository;
+import com.wechat.sell.repository.OrderManagerRepository;
 import com.wechat.sell.service.OrderService;
 import com.wechat.sell.service.ProductService;
 import com.wechat.sell.utils.KeyUtil;
@@ -14,9 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Title: ${FILE_NAME}
@@ -34,36 +43,70 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderDetailRepository orderDetailRepository;
 
+    @Autowired
+    private OrderManagerRepository orderManagerRepository;
+
     @Override
+    @Transactional
     public OrderDTO create(OrderDTO orderDTO) {
         // 创建订单
         String orderId = KeyUtil.genUniqueKey();
         BigDecimal orderAmount = new BigDecimal(BigInteger.ZERO);
         //1 查询商品数量和价格
         for(OrderDetail detail:orderDTO.getOrderDetailList()){
-            ProductInfo productInfo = productService.findOne(orderDTO.getOrderId());
+            ProductInfo productInfo = productService.findOne(detail.getProductId());
             if(null == productInfo){
                 throw new SellException(ResultEnum.PRODUCT_NOT_EXIST);
             }
-            // 计算订单总价钱
-            orderAmount = detail.getProductPrice()
+            // 计算订单总价钱 单个商品的价钱这里使用了前端传过来的值? -- 使用productInfo中的价格
+            orderAmount = productInfo.getProductPrice()
                     .multiply(new BigDecimal(detail.getProductQuantity()))
                     .add(orderAmount);
             // 订单详情入库
+            BeanUtils.copyProperties(productInfo,detail);//属性拷贝会将null也拷贝进去，因此这里先拷贝再设置
             detail.setOrderId(orderId);
             detail.setDetailId(KeyUtil.genUniqueKey());
-            BeanUtils.copyProperties(productInfo,detail);
             orderDetailRepository.save(detail);
         }
 
-        //3 写入订单数据库 orderManager 和 orderDetail
+        //3 写入订单数据库 orderManager 和 orderD   etail
+        OrderManager orderManager = new OrderManager();
+        // 这里属性的拷贝会自动识别相同的属性进行拷贝？
+        BeanUtils.copyProperties(orderDTO,orderManager);
+        orderManager.setOrderId(orderId);
+        orderManager.setOrderAmount(orderAmount);
+        orderManager.setOrderStatus(OrderStatusEnum.NEW.getCode());
+        orderManager.setPayStatus(PayStatusEnum.WAIT.getCode());
+        orderManagerRepository.save(orderManager);
+
         //4 如果下单成功，需要扣除库存
-        return null;
+        // 当并发量较大时,有可能多个用户同时查询出商品的库存量,然后再对商品进行口库存
+        // 这样productService的decreaseStock方法无法判断是否超卖？？
+        // 项目优化再做考虑
+        List<CartDTO> cartDTOList = orderDTO.getOrderDetailList().stream().map(e ->
+                new CartDTO(e.getProductId(),e.getProductQuantity()))
+                .collect(Collectors.toList());
+
+        productService.decreaseStock(cartDTOList);
+        return orderDTO;
     }
 
     @Override
     public OrderDTO findOne(String orderId) {
-        return null;
+        OrderManager orderManager = orderManagerRepository.findOne(orderId);
+        if(null != orderManager){
+            throw new SellException(ResultEnum.ORDER_NOT_EXIST);
+        }
+        List<OrderDetail> orderDetailList = orderDetailRepository.findByOrderId(orderId);
+        // 集合为null 或者 非null集合为空
+        if(CollectionUtils.isEmpty(orderDetailList)){
+            throw new SellException(ResultEnum.ORDERDETAIL_NOT_EXIST);
+        }
+
+        OrderDTO orderDTO = new OrderDTO();
+        BeanUtils.copyProperties(orderManager,orderDTO);
+        orderDTO.setOrderDetailList(orderDetailList);
+        return orderDTO;
     }
 
     @Override

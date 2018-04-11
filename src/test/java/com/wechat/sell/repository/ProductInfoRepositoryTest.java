@@ -10,6 +10,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.swing.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -35,7 +36,7 @@ public class ProductInfoRepositoryTest {
         productInfo.setProductName("小炒肉");
         productInfo.setCategoryType(100001);
         productInfo.setProductStock(80);
-        productInfo.setProductPrice(12.00);
+        productInfo.setProductPrice(new BigDecimal(12.00));
         productInfo.setProductStatus(0);
         productInfo.setProductDescription("新鲜可口农家美味");
         productInfo.setProductIcon("/icon/10113");

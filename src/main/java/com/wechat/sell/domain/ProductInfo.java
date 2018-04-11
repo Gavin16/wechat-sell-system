@@ -5,6 +5,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.math.BigDecimal;
 
 /**
  * @Title: ${FILE_NAME}
@@ -31,7 +32,7 @@ public class ProductInfo {
     /**
      *  单价
      */
-    private Double productPrice;
+    private BigDecimal productPrice;
 
     /**
      *  商品库存

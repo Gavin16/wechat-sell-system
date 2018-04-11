@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -60,7 +61,7 @@ public class ProductServiceImplTest {
         pi.setProductStock(100);
         pi.setCategoryType(100004);
         pi.setProductName("红烧牛肉");
-        pi.setProductPrice(23.00);
+        pi.setProductPrice(new BigDecimal(23.5));
 
         service.save(pi);
     }
