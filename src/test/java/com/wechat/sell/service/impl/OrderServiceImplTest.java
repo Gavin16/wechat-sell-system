@@ -9,12 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 /**
  * @Title: ${FILE_NAME}
@@ -33,6 +33,8 @@ public class OrderServiceImplTest {
     private OrderServiceImpl orderService;
 
     private final String CUSTOMER_OPENID = "117118";
+
+    private final String CUSTOMER_ORDER_ID = "1523403316460544191";
 
     @Test
     public void create() {
@@ -56,7 +58,6 @@ public class OrderServiceImplTest {
         orderDetailList.add(od2);
 
         orderDTO.setOrderDetailList(orderDetailList);
-
         OrderDTO result = orderService.create(orderDTO);
 
         logger.info("【创建订单】result={}",result);
@@ -64,12 +65,19 @@ public class OrderServiceImplTest {
     }
 
     @Test
-    public void findOne() {
-
+    public void findOne()throws Exception {
+        OrderDTO orderDTO = orderService.findOne(CUSTOMER_ORDER_ID);
+        logger.info("【查询定个订单】result={}",orderDTO);
+        Assert.assertNotNull(orderDTO);
     }
 
     @Test
     public void findList() {
+//        List<OrderDTO> orderDTOList = orderService.findList();
+        PageRequest request = new PageRequest(0,3);
+        Page<OrderDTO> orderDTOPage = orderService.findList(CUSTOMER_OPENID,request);
+        logger.info("【历史订单列表】为:{}",orderDTOPage.getContent());
+        Assert.assertNotEquals(orderDTOPage.getTotalElements(),0);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.wechat.sell.service.impl;
 
+import com.wechat.sell.converter.OrderManager2OrderDTO;
 import com.wechat.sell.domain.OrderDetail;
 import com.wechat.sell.domain.OrderManager;
 import com.wechat.sell.domain.ProductInfo;
@@ -17,6 +18,7 @@ import com.wechat.sell.utils.KeyUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,14 +96,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDTO findOne(String orderId) {
         OrderManager orderManager = orderManagerRepository.findOne(orderId);
-        if(null != orderManager){
+        if(null == orderManager){
             throw new SellException(ResultEnum.ORDER_NOT_EXIST);
         }
         List<OrderDetail> orderDetailList = orderDetailRepository.findByOrderId(orderId);
         // 集合为null 或者 非null集合为空
         if(CollectionUtils.isEmpty(orderDetailList)){
             throw new SellException(ResultEnum.ORDERDETAIL_NOT_EXIST);
-        }
+    }
 
         OrderDTO orderDTO = new OrderDTO();
         BeanUtils.copyProperties(orderManager,orderDTO);
@@ -111,7 +113,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Page<OrderDTO> findList(String customerOpenid, Pageable pageable) {
-        return null;
+        Page<OrderManager>orderManagerPage = orderManagerRepository.findByCustomerOpenid(customerOpenid,pageable);
+        List<OrderDTO> orderDTOList = OrderManager2OrderDTO.convert(orderManagerPage.getContent());
+        Page<OrderDTO> orderDTOPage = new PageImpl<OrderDTO>(orderDTOList,pageable,orderManagerPage.getTotalElements());
+        return orderDTOPage;
     }
 
     @Override
