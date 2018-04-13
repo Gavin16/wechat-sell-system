@@ -37,7 +37,7 @@ public class ProductCategoryRepositoryTest {
 
     @Test
     @Transactional
-    public void saveTest(){
+    protected void saveTest(){
         ProductCategory pc = new ProductCategory("热销榜",100000);
         ProductCategory back = repository.save(pc);
         Assert.assertNotNull(back);

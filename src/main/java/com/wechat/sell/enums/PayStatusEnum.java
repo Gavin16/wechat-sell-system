@@ -12,7 +12,7 @@ import lombok.Getter;
 @Getter
 public enum PayStatusEnum {
     WAIT(0,"待支付"),
-    PAYED(1,"已支付")
+    SUCCESS(1,"已支付")
     ;
 
     private Integer code;

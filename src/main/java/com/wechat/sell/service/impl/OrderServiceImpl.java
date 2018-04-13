@@ -13,6 +13,7 @@ import com.wechat.sell.exception.SellException;
 import com.wechat.sell.repository.OrderDetailRepository;
 import com.wechat.sell.repository.OrderManagerRepository;
 import com.wechat.sell.service.OrderService;
+import com.wechat.sell.service.PayService;
 import com.wechat.sell.service.ProductService;
 import com.wechat.sell.utils.KeyUtil;
 import org.slf4j.Logger;
@@ -51,6 +52,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderManagerRepository orderManagerRepository;
+
+    @Autowired
+    private PayService payService;
 
     @Override
     @Transactional
@@ -124,6 +128,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDTO cancel(OrderDTO orderDTO) {
 
         OrderManager orderManager = new OrderManager();
@@ -140,8 +145,9 @@ public class OrderServiceImpl implements OrderService {
             logger.error("【取消订单】更新失败，orderManager={}",orderManager);
             throw new SellException(ResultEnum.ORDER_UPDATE_ERROR);
         }
+
         // 恢复库存,若订单中订单详情为空则抛出异常
-        if(CollectionUtils.isEmpty(orderDTO.getOrderDetailList())){
+        if(!CollectionUtils.isEmpty(orderDTO.getOrderDetailList())){
             logger.error("【取消订单】订单中无商品详情,orderDto={}",orderDTO);
             throw new SellException(ResultEnum.ORDER_DETAIL_EMPTY);
         }
@@ -151,7 +157,10 @@ public class OrderServiceImpl implements OrderService {
 
         productService.increaseStock(cartDTOList);
         // 如果已支付需要退款
-        return null;
+        if(PayStatusEnum.SUCCESS.getCode().equals(orderDTO.getPayStatus())){
+            payService.refund(orderDTO);
+        }
+        return orderDTO;
     }
 
     @Override
