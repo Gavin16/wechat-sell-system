@@ -15,6 +15,8 @@ import com.wechat.sell.repository.OrderManagerRepository;
 import com.wechat.sell.service.OrderService;
 import com.wechat.sell.service.ProductService;
 import com.wechat.sell.utils.KeyUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class OrderServiceImpl implements OrderService {
+
+    private static Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     @Autowired
     private ProductService productService;
@@ -121,6 +125,32 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO cancel(OrderDTO orderDTO) {
+
+        OrderManager orderManager = new OrderManager();
+        BeanUtils.copyProperties(orderDTO,orderManager);
+        // 判断订单状态
+        if(OrderStatusEnum.NEW.getCode().equals(orderDTO.getOrderStatus())){
+            logger.error("【取消订单】订单状态不正确，orderId={},orderStatus={}",orderDTO.getOrderId(),orderDTO.getOrderStatus());
+            throw new SellException(ResultEnum.ORDER_STATUS_ERROR);
+        }
+        // 修改订单状态为取消状态
+        orderManager.setOrderStatus(OrderStatusEnum.CANCEL.getCode());
+        OrderManager updateResult = orderManagerRepository.save(orderManager);
+        if(null == updateResult){
+            logger.error("【取消订单】更新失败，orderManager={}",orderManager);
+            throw new SellException(ResultEnum.ORDER_UPDATE_ERROR);
+        }
+        // 恢复库存,若订单中订单详情为空则抛出异常
+        if(CollectionUtils.isEmpty(orderDTO.getOrderDetailList())){
+            logger.error("【取消订单】订单中无商品详情,orderDto={}",orderDTO);
+            throw new SellException(ResultEnum.ORDER_DETAIL_EMPTY);
+        }
+        List<CartDTO> cartDTOList = orderDTO.getOrderDetailList().stream()
+                .map(e->new CartDTO(e.getProductId(),e.getProductQuantity()))
+                .collect(Collectors.toList());
+
+        productService.increaseStock(cartDTOList);
+        // 如果已支付需要退款
         return null;
     }
 
