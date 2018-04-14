@@ -45,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
     private static Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     @Autowired
-    private ProductService productService;
+    private ProductServiceImpl productService;
 
     @Autowired
     private OrderDetailRepository orderDetailRepository;
@@ -132,22 +132,24 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO cancel(OrderDTO orderDTO) {
 
         OrderManager orderManager = new OrderManager();
-        BeanUtils.copyProperties(orderDTO,orderManager);
+
         // 判断订单状态
-        if(OrderStatusEnum.NEW.getCode().equals(orderDTO.getOrderStatus())){
+        if(!OrderStatusEnum.NEW.getCode().equals(orderDTO.getOrderStatus())){
             logger.error("【取消订单】订单状态不正确，orderId={},orderStatus={}",orderDTO.getOrderId(),orderDTO.getOrderStatus());
             throw new SellException(ResultEnum.ORDER_STATUS_ERROR);
         }
         // 修改订单状态为取消状态
-        orderManager.setOrderStatus(OrderStatusEnum.CANCEL.getCode());
+        orderDTO.setOrderStatus(OrderStatusEnum.CANCEL.getCode());
+        BeanUtils.copyProperties(orderDTO,orderManager);
+
         OrderManager updateResult = orderManagerRepository.save(orderManager);
         if(null == updateResult){
             logger.error("【取消订单】更新失败，orderManager={}",orderManager);
-            throw new SellException(ResultEnum.ORDER_UPDATE_ERROR);
+            throw new SellException(ResultEnum.ORDER_UPDATE_FAIL);
         }
 
         // 恢复库存,若订单中订单详情为空则抛出异常
-        if(!CollectionUtils.isEmpty(orderDTO.getOrderDetailList())){
+        if(CollectionUtils.isEmpty(orderDTO.getOrderDetailList())){
             logger.error("【取消订单】订单中无商品详情,orderDto={}",orderDTO);
             throw new SellException(ResultEnum.ORDER_DETAIL_EMPTY);
         }
@@ -158,18 +160,67 @@ public class OrderServiceImpl implements OrderService {
         productService.increaseStock(cartDTOList);
         // 如果已支付需要退款
         if(PayStatusEnum.SUCCESS.getCode().equals(orderDTO.getPayStatus())){
-            payService.refund(orderDTO);
+//            payService.refund(orderDTO);
+            //TODO
         }
         return orderDTO;
     }
 
     @Override
     public OrderDTO finish(OrderDTO orderDTO) {
+        // 判断订单状态 必须是未完成订单才能
+        if(!orderDTO.getOrderStatus().equals(OrderStatusEnum.NEW.getCode())){
+            logger.error("【完结订单】订单状态不正确,orderId={},orderStatus={}",orderDTO.getOrderId(),orderDTO.getOrderStatus());
+            throw new SellException(ResultEnum.ORDER_STATUS_ERROR);
+        }
+
+        //修改订单状态
+        orderDTO.setOrderStatus(OrderStatusEnum.FINISH.getCode());
+        OrderManager orderManager = new OrderManager();
+        BeanUtils.copyProperties(orderDTO,orderManager);
+
+        OrderManager updateResult = orderManagerRepository.save(orderManager);
+        if(null == updateResult){
+            logger.error("【完结订单】更新订单状态失败，orderManager={}",orderManager);
+            throw new SellException(ResultEnum.ORDER_UPDATE_FAIL);
+        }
+
+        // 推送微信模板消息
         return null;
     }
 
     @Override
     public OrderDTO paid(OrderDTO orderDTO) {
-        return null;
+        // 判断订单状态
+        if(!orderDTO.getOrderStatus().equals(OrderStatusEnum.NEW.getCode())){
+            logger.error("【订单支付完成】订单状态不正确,orderId={}，orderStatus={}",orderDTO.getOrderId(),orderDTO.getOrderStatus());
+            throw new SellException(ResultEnum.ORDER_STATUS_ERROR);
+        }
+
+        // 判断支付状态
+        if(!orderDTO.getPayStatus().equals(PayStatusEnum.WAIT.getCode())){
+            logger.error("【订单支付完成】订单支付状态不正确，orderDto={}",orderDTO);
+            throw new SellException(ResultEnum.ORDER_PAY_STATUS_ERROR);
+        }
+
+        // 修改支付状态
+        orderDTO.setPayStatus(PayStatusEnum.SUCCESS.getCode());
+        OrderManager orderManager = new OrderManager();
+        BeanUtils.copyProperties(orderDTO,orderManager);
+        OrderManager updateResult = orderManagerRepository.save(orderManager);
+        if(null == updateResult){
+            logger.error("【订单支付完成】订单状态更新失败，orderManager={}",orderManager);
+            throw new SellException(ResultEnum.ORDER_UPDATE_FAIL);
+        }
+        return orderDTO;
+    }
+
+    @Override
+    public Page<OrderDTO> findList(Pageable pageable) {
+
+        Page<OrderManager> orderManagerPage = orderManagerRepository.findAll(pageable);
+        List<OrderDTO> orderDTOList = OrderManager2OrderDTO.convert(orderManagerPage.getContent());
+
+        return new PageImpl<>(orderDTOList,pageable,orderManagerPage.getTotalElements());
     }
 }

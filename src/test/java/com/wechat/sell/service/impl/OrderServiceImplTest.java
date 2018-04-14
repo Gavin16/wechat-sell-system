@@ -2,6 +2,7 @@ package com.wechat.sell.service.impl;
 
 import com.wechat.sell.domain.OrderDetail;
 import com.wechat.sell.dto.OrderDTO;
+import com.wechat.sell.enums.OrderStatusEnum;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +35,7 @@ public class OrderServiceImplTest {
 
     private final String CUSTOMER_OPENID = "117118";
 
-    private final String CUSTOMER_ORDER_ID = "1523403316460544191";
+    private final String CUSTOMER_ORDER_ID = "1523403158467854567";
 
     @Test
     public void create() {
@@ -82,6 +83,9 @@ public class OrderServiceImplTest {
 
     @Test
     public void cancel() {
+        OrderDTO orderDTO = orderService.findOne(CUSTOMER_ORDER_ID);
+        OrderDTO result = orderService.cancel(orderDTO);
+        Assert.assertEquals(OrderStatusEnum.CANCEL.getCode(),result.getOrderStatus());
     }
 
     @Test

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 /**
  * @Title: wechat-sell-system
  * @Package com.wechat.sell.service
- * @Description: ${todo}
+ * @Description:
  * @author: eta
  * @date 2018/4/13 11:06
  */
