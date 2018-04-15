@@ -3,6 +3,7 @@ package com.wechat.sell.service.impl;
 import com.wechat.sell.domain.OrderDetail;
 import com.wechat.sell.dto.OrderDTO;
 import com.wechat.sell.enums.OrderStatusEnum;
+import com.wechat.sell.enums.PayStatusEnum;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.validation.constraints.AssertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +37,7 @@ public class OrderServiceImplTest {
 
     private final String CUSTOMER_OPENID = "117118";
 
-    private final String CUSTOMER_ORDER_ID = "1523403158467854567";
+    private final String CUSTOMER_ORDER_ID = "1523401770544188062";
 
     @Test
     public void create() {
@@ -90,9 +92,15 @@ public class OrderServiceImplTest {
 
     @Test
     public void finish() {
+        OrderDTO orderDTO = orderService.findOne(CUSTOMER_ORDER_ID);
+        OrderDTO finishResult = orderService.finish(orderDTO);
+        Assert.assertEquals(OrderStatusEnum.FINISH.getCode(),finishResult.getOrderStatus());
     }
 
     @Test
     public void paid() {
+        OrderDTO orderDTO = orderService.findOne(CUSTOMER_ORDER_ID);
+        OrderDTO paidResult = orderService.paid(orderDTO);
+        Assert.assertEquals(paidResult.getPayStatus(), PayStatusEnum.SUCCESS.getCode());
     }
 }

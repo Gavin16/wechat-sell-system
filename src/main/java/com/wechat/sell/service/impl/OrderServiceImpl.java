@@ -80,10 +80,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         //3 写入订单数据库 orderManager 和 orderD   etail
+        orderDTO.setOrderId(orderId);
         OrderManager orderManager = new OrderManager();
         // 这里属性的拷贝会自动识别相同的属性进行拷贝？
         BeanUtils.copyProperties(orderDTO,orderManager);
-        orderManager.setOrderId(orderId);
+//        orderManager.setOrderId(orderId);
         orderManager.setOrderAmount(orderAmount);
         orderManager.setOrderStatus(OrderStatusEnum.NEW.getCode());
         orderManager.setPayStatus(PayStatusEnum.WAIT.getCode());
@@ -167,6 +168,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDTO finish(OrderDTO orderDTO) {
         // 判断订单状态 必须是未完成订单才能
         if(!orderDTO.getOrderStatus().equals(OrderStatusEnum.NEW.getCode())){
@@ -186,10 +188,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 推送微信模板消息
-        return null;
+        return orderDTO;
     }
 
     @Override
+    @Transactional
     public OrderDTO paid(OrderDTO orderDTO) {
         // 判断订单状态
         if(!orderDTO.getOrderStatus().equals(OrderStatusEnum.NEW.getCode())){
