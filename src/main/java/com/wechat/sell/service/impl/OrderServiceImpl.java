@@ -14,7 +14,6 @@ import com.wechat.sell.repository.OrderDetailRepository;
 import com.wechat.sell.repository.OrderManagerRepository;
 import com.wechat.sell.service.OrderService;
 import com.wechat.sell.service.PayService;
-import com.wechat.sell.service.ProductService;
 import com.wechat.sell.utils.KeyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,13 +198,11 @@ public class OrderServiceImpl implements OrderService {
             logger.error("【订单支付完成】订单状态不正确,orderId={}，orderStatus={}",orderDTO.getOrderId(),orderDTO.getOrderStatus());
             throw new SellException(ResultEnum.ORDER_STATUS_ERROR);
         }
-
         // 判断支付状态
         if(!orderDTO.getPayStatus().equals(PayStatusEnum.WAIT.getCode())){
             logger.error("【订单支付完成】订单支付状态不正确，orderDto={}",orderDTO);
             throw new SellException(ResultEnum.ORDER_PAY_STATUS_ERROR);
         }
-
         // 修改支付状态
         orderDTO.setPayStatus(PayStatusEnum.SUCCESS.getCode());
         OrderManager orderManager = new OrderManager();
@@ -220,10 +217,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Page<OrderDTO> findList(Pageable pageable) {
-
         Page<OrderManager> orderManagerPage = orderManagerRepository.findAll(pageable);
         List<OrderDTO> orderDTOList = OrderManager2OrderDTO.convert(orderManagerPage.getContent());
-
         return new PageImpl<>(orderDTOList,pageable,orderManagerPage.getTotalElements());
     }
 }
